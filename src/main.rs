@@ -1,6 +1,8 @@
-mod modes;
+mod encoder;
+mod state;
 
-use modes::*;
+use encoder::*;
+use state::*;
 
 fn main() {
     let scan_ms = 138.24; // scottie 1
@@ -16,7 +18,7 @@ fn main() {
         ColorRGBScanState::new("Red Scan", scan_ms, 0),
     ];
     
-    let mut ctx = Context::new();
+    let mut ctx = EncodeContext::new();
 
     for state in states {
         state.encode(&mut ctx);
