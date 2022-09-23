@@ -1,0 +1,3 @@
+fn encode() {
+    println!("encode");
+}
