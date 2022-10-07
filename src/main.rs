@@ -63,7 +63,7 @@ impl EncodeInput for EncodeInputImage {
 
 struct EncodeOutputSndFile {
     snd_file: sndfile::SndFile,
-
+    buffer: Vec<f32>,
 }
 
 
@@ -71,7 +71,7 @@ impl EncodeOutputSndFile {
     pub fn new(file_name: &str) -> Self {
         let write_options = sndfile::WriteOptions::new(
             sndfile::MajorFormat::WAV,
-            sndfile::SubtypeFormat::FLOAT,
+            sndfile::SubtypeFormat::PCM_16,
             sndfile::Endian::Little,
             24000,
             1,
@@ -80,16 +80,24 @@ impl EncodeOutputSndFile {
         let snd_file = sndfile::OpenOptions::WriteOnly(write_options).from_path(
             file_name
           ).unwrap();
+
+        let buffer = Vec::new();
         
-        return EncodeOutputSndFile{ snd_file }
+        return EncodeOutputSndFile{ snd_file, buffer }
+    }
+}
+
+impl Drop for EncodeOutputSndFile {
+    fn drop(&mut self) {
+        let result = self.snd_file.write_from_slice(self.buffer.as_slice());
+        result.unwrap();
     }
 }
 
 impl EncodeOutput for EncodeOutputSndFile {
     fn write(&mut self, value: f32) -> usize{
-        let slice = &[value];
-        let result = self.snd_file.write_from_slice(slice);
-        return result.unwrap();
+        self.buffer.push(value);
+        return 1;
     }
 }
 
@@ -100,7 +108,7 @@ fn main() {
     let mut input = EncodeInputImage::new("test_image.jpg");
 
     let states: EncodeStates = vec![
-        SilenceState::new("Start Silence", 5000.0, 1),
+        SilenceState::new("Start Silence", 500.0, 1),
         ToneState::new("Starting Sync Pulse", 9.0, 1200.0, 1),
         ToneState::new("Separator Pulse", 1.5, 1500.0, 1),
         ColorRGBScanState::new("Green Scan", scan_ms, 1, 1),
