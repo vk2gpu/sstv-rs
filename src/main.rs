@@ -7,10 +7,35 @@ use state::*;
 extern crate sndfile;
 use sndfile::*;
 
+extern crate image;
+use image::*;
+
+struct EncodeInputTest {
+
+}
+
+impl EncodeInputTest {
+    pub fn new() -> Self {
+        EncodeInputTest{}
+    }
+}
+
+impl EncodeInput for EncodeInputTest {
+    fn read(&self, x: f32, y:f32) -> Color {
+        Color {
+            r: x,
+            g: y,
+            b: 0.0,
+            a: 1.0
+        }
+    }
+}
+
 struct EncodeOutputSndFile {
     snd_file: sndfile::SndFile,
 
 }
+
 
 impl EncodeOutputSndFile {
     pub fn new(file_name: &str) -> Self {
@@ -42,6 +67,7 @@ fn main() {
     let scan_ms = 138.24; // scottie 1
 
     let mut output = EncodeOutputSndFile::new("test.wav");
+    let mut input = EncodeInputTest::new();
 
     let states: EncodeStates = vec![
         SilenceState::new("Start Silence", 5000.0, 1),
@@ -55,7 +81,7 @@ fn main() {
         ColorRGBScanState::new("Red Scan", scan_ms, 0, -6),
     ];
 
-    encode(&states, &mut output);
+    encode(&states, &mut input, &mut output);
 }
 
 

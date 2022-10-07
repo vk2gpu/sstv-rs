@@ -98,6 +98,10 @@ impl EncodeState for ColorRGBScanState {
     }
 }
 
+pub trait EncodeInput {
+    fn read(&self, x: f32, y:f32) -> Color;
+}
+
 pub trait EncodeOutput {
     fn write(&mut self, value: f32) -> usize;
 }
@@ -105,7 +109,7 @@ pub trait EncodeOutput {
 pub type EncodeStateBoxed = Box<dyn EncodeState>;
 pub type EncodeStates = Vec<EncodeStateBoxed>;
 
-pub fn encode(states: &EncodeStates, output: &mut dyn EncodeOutput) {
+pub fn encode(states: &EncodeStates, input: &mut dyn EncodeInput, output: &mut dyn EncodeOutput) {
     let mut ctx = EncodeContext::new();
 
     let mut curr_state_idx: i32 = 0;
@@ -118,9 +122,7 @@ pub fn encode(states: &EncodeStates, output: &mut dyn EncodeOutput) {
     let max_time = 60000.0;
 
     while ctx.y < ctx.height {
-        // hack build some RGB.
-        ctx.color.r = ctx.x as f32 / 320.0;
-        ctx.color.g = ctx.y as f32 / 256.0;
+        ctx.color = input.read(ctx.x as f32 / ctx.width as f32, ctx.y as f32 / ctx.height as f32 );
 
         let curr_state = &states[curr_state_idx as usize];
         curr_state.encode(&mut ctx);
