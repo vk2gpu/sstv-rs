@@ -31,6 +31,36 @@ impl EncodeInput for EncodeInputTest {
     }
 }
 
+struct EncodeInputImage {
+    image: image::RgbaImage,
+}
+
+impl EncodeInputImage {
+    pub 
+    fn new(file_name: &str) -> Self {
+        EncodeInputImage{
+            image: image::open(&file_name)
+                .expect("Open file failed")
+                .to_rgba8()
+        }
+    }
+}
+
+impl EncodeInput for EncodeInputImage {
+    fn read(&self, x: f32, y:f32) -> Color {
+        let ax = (x * (self.image.width() as f32 - 1.0)) as u32;
+        let ay = (y * (self.image.height() as f32 - 1.0)) as u32;
+        let px = self.image.get_pixel(ax, ay);
+        let ch = px.channels();
+        Color {
+            r: ch[0] as f32 / 255.0,
+            g: ch[1] as f32 / 255.0,
+            b: ch[2] as f32 / 255.0,
+            a: ch[3] as f32 / 255.0,
+        }
+    }
+}
+
 struct EncodeOutputSndFile {
     snd_file: sndfile::SndFile,
 
@@ -67,7 +97,7 @@ fn main() {
     let scan_ms = 138.24; // scottie 1
 
     let mut output = EncodeOutputSndFile::new("test.wav");
-    let mut input = EncodeInputTest::new();
+    let mut input = EncodeInputImage::new("test_image.jpg");
 
     let states: EncodeStates = vec![
         SilenceState::new("Start Silence", 5000.0, 1),
