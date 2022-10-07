@@ -32,11 +32,12 @@ impl Color {
 pub struct SilenceState {
     pub name: &'static str,
     pub ms: f32,
+    pub next_state: i32,
 }
 
 impl SilenceState {
-    pub fn new(name: &'static str, ms: f32) -> Box<Self> {
-        Box::new(SilenceState { name: name, ms: ms })
+    pub fn new(name: &'static str, ms: f32, next_state: i32) -> Box<Self> {
+        Box::new(SilenceState { name: name, ms: ms, next_state: next_state })
     }
 }
 
@@ -44,22 +45,24 @@ pub struct ToneState {
     pub name: &'static str,
     pub ms: f32,
     pub hz: f32,
+    pub next_state: i32,
 }
 
 impl ToneState {
-    pub fn new(name: &'static str, ms: f32, hz: f32) -> Box<Self> {
-        Box::new(ToneState { name: name, ms: ms, hz: hz })
+    pub fn new(name: &'static str, ms: f32, hz: f32, next_state: i32) -> Box<Self> {
+        Box::new(ToneState { name: name, ms: ms, hz: hz, next_state: next_state})
     }
 }
 
 pub struct ColorRGBScanState {
     pub name: &'static str,
     pub ms: f32,
-    pub ch: u32
+    pub ch: u32,
+    pub next_state: i32,
 }
 
 impl ColorRGBScanState {
-    pub fn new(name: &'static str, ms: f32, ch: u32) -> Box<Self> {
-        Box::new(ColorRGBScanState { name: name, ms: ms, ch: ch })
+    pub fn new(name: &'static str, ms: f32, ch: u32, next_state: i32) -> Box<Self> {
+        Box::new(ColorRGBScanState { name: name, ms: ms, ch: ch, next_state: next_state })
     }
 }

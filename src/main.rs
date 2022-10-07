@@ -4,26 +4,60 @@ mod state;
 use encoder::*;
 use state::*;
 
+extern crate sndfile;
+use sndfile::*;
+
+struct EncodeOutputSndFile {
+    snd_file: sndfile::SndFile,
+
+}
+
+impl EncodeOutputSndFile {
+    pub fn new(file_name: &str) -> Self {
+        let write_options = sndfile::WriteOptions::new(
+            sndfile::MajorFormat::WAV,
+            sndfile::SubtypeFormat::FLOAT,
+            sndfile::Endian::Little,
+            24000,
+            1,
+        );
+
+        let snd_file = sndfile::OpenOptions::WriteOnly(write_options).from_path(
+            file_name
+          ).unwrap();
+        
+        return EncodeOutputSndFile{ snd_file }
+    }
+}
+
+impl EncodeOutput for EncodeOutputSndFile {
+    fn write(&mut self, value: f32) -> usize{
+        let slice = &[value];
+        let result = self.snd_file.write_from_slice(slice);
+        return result.unwrap();
+    }
+}
+
 fn main() {
     let scan_ms = 138.24; // scottie 1
 
-    let mut states: Vec<Box<dyn EncodeState>> = vec![
-        ToneState::new("Starting Sync Pulse", 9.0, 1200.0),
-        ToneState::new("Separator Pulse", 1.5, 1500.0),
-        ColorRGBScanState::new("Green Scan", scan_ms, 1),
-        ToneState::new("Separator Pulse", 1.5, 1500.0),
-        ColorRGBScanState::new("Blue Scan", scan_ms, 2),
-        ToneState::new("Sync Pulse", 9.0, 1200.0),
-        ToneState::new("Sync Porch", 1.5, 1500.0),
-        ColorRGBScanState::new("Red Scan", scan_ms, 0),
-    ];
-    
-    let mut ctx = EncodeContext::new();
+    let mut output = EncodeOutputSndFile::new("test.wav");
 
-    for state in states {
-        state.encode(&mut ctx);
-    }
+    let states: EncodeStates = vec![
+        SilenceState::new("Start Silence", 5000.0, 1),
+        ToneState::new("Starting Sync Pulse", 9.0, 1200.0, 1),
+        ToneState::new("Separator Pulse", 1.5, 1500.0, 1),
+        ColorRGBScanState::new("Green Scan", scan_ms, 1, 1),
+        ToneState::new("Separator Pulse", 1.5, 1500.0, 1),
+        ColorRGBScanState::new("Blue Scan", scan_ms, 2, 1),
+        ToneState::new("Sync Pulse", 9.0, 1200.0, 1),
+        ToneState::new("Sync Porch", 1.5, 1500.0, 1),
+        ColorRGBScanState::new("Red Scan", scan_ms, 0, -6),
+    ];
+
+    encode(&states, &mut output);
 }
+
 
 
 /*
