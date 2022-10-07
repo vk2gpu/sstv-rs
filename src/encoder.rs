@@ -27,7 +27,7 @@ impl EncodeContext {
             curr_ampl: 0.0,
             time_ms: 0.0,
             oscil_time: 0.0,
-            sample_rate: 24000.0
+            sample_rate: 8000.0
         }
     }
 }

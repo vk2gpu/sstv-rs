@@ -32,16 +32,15 @@ impl EncodeInput for EncodeInputTest {
 }
 
 struct EncodeInputImage {
-    image: image::RgbaImage,
+    image: image::Rgba32FImage,
 }
 
 impl EncodeInputImage {
-    pub 
     fn new(file_name: &str) -> Self {
         EncodeInputImage{
             image: image::open(&file_name)
                 .expect("Open file failed")
-                .to_rgba8()
+                .to_rgba32f()
         }
     }
 }
@@ -53,10 +52,11 @@ impl EncodeInput for EncodeInputImage {
         let px = self.image.get_pixel(ax, ay);
         let ch = px.channels();
         Color {
-            r: ch[0] as f32 / 255.0,
-            g: ch[1] as f32 / 255.0,
-            b: ch[2] as f32 / 255.0,
-            a: ch[3] as f32 / 255.0,
+            
+            r: ch[0],
+            g: ch[1],
+            b: ch[2],
+            a: ch[3],
         }
     }
 }
@@ -73,7 +73,7 @@ impl EncodeOutputSndFile {
             sndfile::MajorFormat::WAV,
             sndfile::SubtypeFormat::PCM_16,
             sndfile::Endian::Little,
-            24000,
+            8000,
             1,
         );
 
@@ -102,7 +102,8 @@ impl EncodeOutput for EncodeOutputSndFile {
 }
 
 fn main() {
-    let scan_ms = 138.24; // scottie 1
+    //let scan_ms = 138.24; // scottie 1
+    let scan_ms: f32 = 88.064; // scottie 2
 
     let mut output = EncodeOutputSndFile::new("test.wav");
     let mut input = EncodeInputImage::new("test_image.jpg");
