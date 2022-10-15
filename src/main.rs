@@ -10,6 +10,7 @@ use sndfile::*;
 extern crate image;
 use image::*;
 
+
 struct EncodeInputTest {
 
 }
@@ -102,26 +103,14 @@ impl EncodeOutput for EncodeOutputSndFile {
 }
 
 fn main() {
-    //let scan_ms = 138.24; // scottie 1
-    let scan_ms: f32 = 88.064; // scottie 2
-
     let mut output = EncodeOutputSndFile::new("test.wav");
     let mut input = EncodeInputImage::new("test_image.jpg");
 
-    let states: EncodeStates = vec![
-        SilenceState::new("Start Silence", 500.0, 1),
-        ToneState::new("Starting Sync Pulse", 9.0, 1200.0, 1),
-        ToneState::new("Separator Pulse", 1.5, 1500.0, 1),
-        ColorRGBScanState::new("Green Scan", scan_ms, 1, 1),
-        ToneState::new("Separator Pulse", 1.5, 1500.0, 1),
-        ColorRGBScanState::new("Blue Scan", scan_ms, 2, 1),
-        ToneState::new("Sync Pulse", 9.0, 1200.0, 1),
-        ToneState::new("Sync Porch", 1.5, 1500.0, 1),
-        ColorRGBScanState::new("Red Scan", scan_ms, 0, -6),
-    ];
+    let states: EncodeStates = getStates(VisCode::Martin2);
 
     encode(&states, &mut input, &mut output);
 }
+
 
 
 
