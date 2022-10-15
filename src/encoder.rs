@@ -109,6 +109,61 @@ pub trait EncodeOutput {
 pub type EncodeStateBoxed = Box<dyn EncodeState>;
 pub type EncodeStates = Vec<EncodeStateBoxed>;
 
+fn countBitsSet(in_value: u32) -> u32
+{
+    let mut value = in_value; 
+    value = (value & 0x55555555) + ((value & 0xAAAAAAAA) >> 1);
+    value = (value & 0x33333333) + ((value & 0xCCCCCCCC) >> 2);
+    value = (value & 0x0F0F0F0F) + ((value & 0xF0F0F0F0) >> 4);
+    value = (value & 0x00FF00FF) + ((value & 0xFF00FF00) >> 8);
+    return ((value & 0x0000FFFF) + ((value & 0xFFFF0000) >> 16)) as u32;
+}
+
+
+fn getStatesPreamble() -> EncodeStates {
+    return vec![
+        ToneState::new("Preamble", 100.0, 1900.0, 1),
+        ToneState::new("Preamble", 100.0, 1500.0, 1),
+        ToneState::new("Preamble", 100.0, 1900.0, 1),
+        ToneState::new("Preamble", 100.0, 1500.0, 1),
+        ToneState::new("Preamble", 100.0, 2300.0, 1),
+        ToneState::new("Preamble", 100.0, 1500.0, 1),
+        ToneState::new("Preamble", 100.0, 2300.0, 1),
+        ToneState::new("Preamble", 100.0, 1500.0, 1),
+    ];
+}
+
+fn getStatesVisCode(vis_code: VisCode) -> EncodeStates {
+    let vis_code_bits = vis_code as u32;
+    let bits: &[f32] = &[
+        if vis_code_bits & 0x01 != 0 { 1100.0 } else { 1300.0 },
+        if vis_code_bits & 0x02 != 0 { 1100.0 } else { 1300.0 },
+        if vis_code_bits & 0x04 != 0 { 1100.0 } else { 1300.0 },
+        if vis_code_bits & 0x08 != 0 { 1100.0 } else { 1300.0 },
+        if vis_code_bits & 0x10 != 0 { 1100.0 } else { 1300.0 },
+        if vis_code_bits & 0x20 != 0 { 1100.0 } else { 1300.0 },
+        if vis_code_bits & 0x40 != 0 { 1100.0 } else { 1300.0 },
+        if countBitsSet(vis_code_bits) & 1 != 0 { 1100.0 } else { 1300.0 },
+    ];
+
+    return vec![
+        ToneState::new("Leader Tone", 300.0, 1900.0, 1),
+        ToneState::new("Break", 10.0, 1200.0, 1),
+        ToneState::new("Leader Tone", 300.0, 1900.0, 1),
+        ToneState::new("Start Bit", 30.0, 1200.0, 1),
+        ToneState::new("Bit 0", 30.0, bits[0], 1),
+        ToneState::new("Bit 1", 30.0, bits[1], 1),
+        ToneState::new("Bit 2", 30.0, bits[2], 1),
+        ToneState::new("Bit 3", 30.0, bits[3], 1),
+        ToneState::new("Bit 4", 30.0, bits[4], 1),
+        ToneState::new("Bit 5", 30.0, bits[5], 1),
+        ToneState::new("Bit 6", 30.0, bits[6], 1),
+        ToneState::new("Parity", 30.0,bits[7], 1),
+        ToneState::new("Stop Bit", 30.0, 1200.0, 1),
+    ];
+}
+
+
 fn getStatesScottie(vis_code: VisCode) -> EncodeStates {
     let scan_ms: f32 = match vis_code {
         VisCode::Scottie1 => 138.24,
@@ -129,30 +184,6 @@ fn getStatesScottie(vis_code: VisCode) -> EncodeStates {
         ColorRGBScanState::new("Red Scan", scan_ms, 0, -6),
     ];
 }
-
-/*
-    float scan_ms = 0.0f;
-    switch(vis) {
-        case VIS_CODE_MARTIN_1: scan_ms = 146.432f; break;
-        case VIS_CODE_MARTIN_2: scan_ms = 73.216f; break;
-        default: return 0;
-    }
-
-    ctx->width = 320;
-    ctx->height = 256;
-
-    state_tone( &states[0], 4.862f, 1200.0f, &states[1] );          // Sync pulse 
-    state_tone( &states[1], 0.572f, 1500.0f, &states[2] );          // Sync porch
-    state_rgb_color_scan( &states[2], scan_ms, 1, &states[3] );     // Green scan
-    state_tone( &states[3], 0.572f, 1500.0f, &states[4] );          // Separator pulse
-    state_rgb_color_scan( &states[4], scan_ms, 2, &states[5] );     // Blue scan
-    state_tone( &states[5], 0.572f, 1500.0f, &states[6] );          // Separator pulse
-    state_rgb_color_scan( &states[6], scan_ms, 0, &states[7] );     // Red scan
-    state_tone( &states[7], 0.572f, 1500.0f, &states[0] );          // Separator pulse
-    ctx->end_state = &states[7];
-    return ctx->end_state + 1;
-
-    */
 
 fn getStatesMartin(vis_code: VisCode) -> EncodeStates {
     let scan_ms: f32 = match vis_code {
