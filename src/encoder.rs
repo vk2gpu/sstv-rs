@@ -37,7 +37,7 @@ pub trait EncodeState {
     fn get_next_state(&self) -> i32;
 }
 
-fn check_end_state(ctx: &mut EncodeContext, state: &EncodeState) {
+fn check_end_state(ctx: &mut EncodeContext, state: &dyn EncodeState) {
     if state.get_next_state() < 0 && ctx.time_ms >= state.get_ms() {
         ctx.y += 1;
         //if(ctx.y >= ctx->height)
@@ -109,7 +109,7 @@ pub trait EncodeOutput {
 pub type EncodeStateBoxed = Box<dyn EncodeState>;
 pub type EncodeStates = Vec<EncodeStateBoxed>;
 
-fn countBitsSet(in_value: u32) -> u32
+fn count_bits_set(in_value: u32) -> u32
 {
     let mut value = in_value; 
     value = (value & 0x55555555) + ((value & 0xAAAAAAAA) >> 1);
@@ -120,7 +120,7 @@ fn countBitsSet(in_value: u32) -> u32
 }
 
 
-fn getStatesPreamble() -> EncodeStates {
+fn get_states_preamble() -> EncodeStates {
     return vec![
         ToneState::new("Preamble", 100.0, 1900.0, 1),
         ToneState::new("Preamble", 100.0, 1500.0, 1),
@@ -133,7 +133,7 @@ fn getStatesPreamble() -> EncodeStates {
     ];
 }
 
-fn getStatesVisCode(vis_code: VisCode) -> EncodeStates {
+fn get_states_vis_code(vis_code: VisCode) -> EncodeStates {
     let vis_code_bits = vis_code as u32;
     let bits: &[f32] = &[
         if vis_code_bits & 0x01 != 0 { 1100.0 } else { 1300.0 },
@@ -143,7 +143,7 @@ fn getStatesVisCode(vis_code: VisCode) -> EncodeStates {
         if vis_code_bits & 0x10 != 0 { 1100.0 } else { 1300.0 },
         if vis_code_bits & 0x20 != 0 { 1100.0 } else { 1300.0 },
         if vis_code_bits & 0x40 != 0 { 1100.0 } else { 1300.0 },
-        if countBitsSet(vis_code_bits) & 1 != 0 { 1100.0 } else { 1300.0 },
+        if count_bits_set(vis_code_bits) & 1 != 0 { 1100.0 } else { 1300.0 },
     ];
 
     return vec![
@@ -164,7 +164,7 @@ fn getStatesVisCode(vis_code: VisCode) -> EncodeStates {
 }
 
 
-fn getStatesScottie(vis_code: VisCode) -> EncodeStates {
+fn get_states_scottie(vis_code: VisCode) -> EncodeStates {
     let scan_ms: f32 = match vis_code {
         VisCode::Scottie1 => 138.24,
         VisCode::Scottie2 => 88.064,
@@ -185,7 +185,7 @@ fn getStatesScottie(vis_code: VisCode) -> EncodeStates {
     ];
 }
 
-fn getStatesMartin(vis_code: VisCode) -> EncodeStates {
+fn get_states_martin(vis_code: VisCode) -> EncodeStates {
     let scan_ms: f32 = match vis_code {
         VisCode::Martin1 => 146.432,
         VisCode::Martin2 => 73.216,
@@ -193,7 +193,6 @@ fn getStatesMartin(vis_code: VisCode) -> EncodeStates {
     };
 
     return vec![
-        SilenceState::new("Start Silence", 500.0, 1),
         ToneState::new("Sync Pulse", 4.862, 1200.0, 1),
         ToneState::new("Sync Porch", 0.572, 1500.0, 1),
         ColorRGBScanState::new("Green Scan", scan_ms, 1, 1),
@@ -205,15 +204,23 @@ fn getStatesMartin(vis_code: VisCode) -> EncodeStates {
     ];
 }
 
-pub fn getStates(vis_code: VisCode) -> EncodeStates {
-    return match vis_code {
-        VisCode::Scottie1 => getStatesScottie(vis_code),
-        VisCode::Scottie2 => getStatesScottie(vis_code),
-        VisCode::ScottieDX => getStatesScottie(vis_code),
-        VisCode::Martin1 => getStatesMartin(vis_code),
-        VisCode::Martin2 => getStatesMartin(vis_code),
+pub fn get_states(vis_code: VisCode) -> EncodeStates {
+    let preamble_states = get_states_preamble();
+    let vis_code_states = get_states_vis_code(vis_code);
+    let mode_states = match vis_code {
+        VisCode::Scottie1 => get_states_scottie(vis_code),
+        VisCode::Scottie2 => get_states_scottie(vis_code),
+        VisCode::ScottieDX => get_states_scottie(vis_code),
+        VisCode::Martin1 => get_states_martin(vis_code),
+        VisCode::Martin2 => get_states_martin(vis_code),
         _ => panic!("Invalid vis mode."),
     };
+
+    let mut out_states = EncodeStates::new();
+    out_states.extend(preamble_states);
+    out_states.extend(vis_code_states);
+    out_states.extend(mode_states);
+    return out_states;
 }
 
 pub fn encode(states: &EncodeStates, input: &mut dyn EncodeInput, output: &mut dyn EncodeOutput) {
@@ -226,7 +233,6 @@ pub fn encode(states: &EncodeStates, input: &mut dyn EncodeInput, output: &mut d
 
     let mut pct = 0;
     let mut curr_time = 0.0;
-    let max_time = 60000.0;
 
     while ctx.y < ctx.height {
         ctx.color = input.read(ctx.x as f32 / ctx.width as f32, ctx.y as f32 / ctx.height as f32 );

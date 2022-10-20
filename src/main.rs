@@ -106,7 +106,7 @@ fn main() {
     let mut output = EncodeOutputSndFile::new("test.wav");
     let mut input = EncodeInputImage::new("test_image.jpg");
 
-    let states: EncodeStates = getStates(VisCode::Martin2);
+    let states: EncodeStates = get_states(VisCode::Martin2);
 
     encode(&states, &mut input, &mut output);
 }

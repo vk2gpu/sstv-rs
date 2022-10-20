@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub enum VisCode {
     Scottie1 = 60,
     Scottie2 = 56,
@@ -6,6 +7,7 @@ pub enum VisCode {
     Martin2 = 40,
 }
 
+#[derive(Clone, Copy)]
 pub struct Color {
     pub r: f32,
     pub g: f32,
