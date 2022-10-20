@@ -173,7 +173,6 @@ fn get_states_scottie(vis_code: VisCode) -> EncodeStates {
     };
 
     return vec![
-        SilenceState::new("Start Silence", 500.0, 1),
         ToneState::new("Starting Sync Pulse", 9.0, 1200.0, 1),
         ToneState::new("Separator Pulse", 1.5, 1500.0, 1),
         ColorRGBScanState::new("Green Scan", scan_ms, 1, 1),
